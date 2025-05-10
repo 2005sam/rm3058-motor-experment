@@ -21,7 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <string.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,24 +43,42 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
 
+UART_HandleTypeDef huart1;
+
 /* USER CODE BEGIN PV */
 CAN_TxHeaderTypeDef tx_header_motor;
-uint8_t tx_data[8] = {};
+uint8_t tx_data[8] = {0};
 uint32_t tx_mailbox; 
 uint16_t torque=0;
+CAN_RxHeaderTypeDef rx_header_motor[4]={0};
+uint8_t rx_date[8];
+struct rx_date_motor_struct{float angle;uint16_t rpm;uint16_t current;uint8_t temperture;} motor_rx_date;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	uint8_t rx_date[8];
+	if(HAL_CAN_GetRxMessage(hcan,CAN_RX_FIFO0,&rx_header_motor[0],rx_date)==HAL_OK){
+		motor_rx_date.angle = ((rx_date[0]<<8) | rx_date[1])/8191.0f;
+		motor_rx_date.current= (rx_date[2]<<8) | rx_date[3];
+		motor_rx_date.rpm= (rx_date[4]<<8) | rx_date[5];
+		motor_rx_date.temperture= rx_date[6];
+		char usart_send[100];
+		sprintf(usart_send,"%.2f,%d,%d,%d\n",motor_rx_date.angle,motor_rx_date.rpm,motor_rx_date.current,motor_rx_date.temperture);
+		HAL_UART_Transmit(&huart1,(uint8_t*)usart_send,strlen(usart_send),100);
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -92,6 +111,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan1);
 
@@ -102,6 +122,20 @@ int main(void)
   tx_header_motor.DLC = 8;
   tx_header_motor.IDE=CAN_ID_STD;
   tx_header_motor.TransmitGlobalTime = DISABLE;
+
+
+//接受电机数据的帧头信息
+  int temp=0;
+while (temp<4) {
+  rx_header_motor[temp].StdId = 0x200;
+  rx_header_motor[temp].ExtId = 0;
+  rx_header_motor[temp].RTR = CAN_RTR_DATA;
+  rx_header_motor[temp].DLC = 8;
+  rx_header_motor[temp].IDE=CAN_ID_STD;
+  temp++;
+}
+
+  HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0,&rx_header_motor[0], rx_date);
 
 
 
@@ -215,6 +249,39 @@ static void MX_CAN1_Init(void)
   /* USER CODE BEGIN CAN1_Init 2 */
 
   /* USER CODE END CAN1_Init 2 */
+
+}
+
+/**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
 
 }
 
