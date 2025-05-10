@@ -43,9 +43,10 @@
 CAN_HandleTypeDef hcan1;
 
 /* USER CODE BEGIN PV */
-CAN_TxHeaderTypeDef tx_header;
+CAN_TxHeaderTypeDef tx_header_motor;
 uint8_t tx_data[8] = {};
 uint32_t tx_mailbox; 
+uint16_t torque=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,15 +95,14 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan1);
 
-  //配置帧头信息
-  tx_header.StdId = 0x200;
-  tx_header.ExtId = 0;
-  tx_header.RTR = CAN_RTR_DATA;
-  tx_header.DLC = 8;
-  tx_header.IDE=CAN_ID_STD;
-  tx_header.TransmitGlobalTime = DISABLE;
+  //配置电机帧头信息
+  tx_header_motor.StdId = 0x200;
+  tx_header_motor.ExtId = 0;
+  tx_header_motor.RTR = CAN_RTR_DATA;
+  tx_header_motor.DLC = 8;
+  tx_header_motor.IDE=CAN_ID_STD;
+  tx_header_motor.TransmitGlobalTime = DISABLE;
 
-  HAL_CAN_AddTxMessage(&hcan1,&tx_header,tx_data,&tx_mailbox);
 
 
   /* USER CODE END 2 */
@@ -111,6 +111,24 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  //使电机正反转
+	  while(torque<1000)
+	  {
+		  torque+=50;
+		  tx_data[0] = torque>>8;
+		  tx_data[1] = torque;
+  		  HAL_CAN_AddTxMessage(&hcan1,&tx_header_motor,tx_data,&tx_mailbox);
+		  HAL_Delay(50);
+	  }
+	  while(torque>-1000)
+	  {
+		  torque-=50;
+		  tx_data[0] = torque>>8;
+		  tx_data[1] = torque;
+  		  HAL_CAN_AddTxMessage(&hcan1,&tx_header_motor,tx_data,&tx_mailbox);
+		  HAL_Delay(50);
+	  }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
