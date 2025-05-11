@@ -53,6 +53,7 @@ uint16_t torque=0;
 CAN_RxHeaderTypeDef rx_header_motor[4]={0};
 uint8_t rx_date[8];
 struct rx_date_motor_struct{float angle;uint16_t rpm;uint16_t current;uint8_t temperture;} motor_rx_date;
+CAN_FilterTypeDef sFilterConfig;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -124,20 +125,31 @@ int main(void)
   tx_header_motor.TransmitGlobalTime = DISABLE;
 
 
-//接受电机数据的帧头信息
+  //接受电机数据的帧头信息
   int temp=0;
-while (temp<4) {
-  rx_header_motor[temp].StdId = 0x200;
-  rx_header_motor[temp].ExtId = 0;
-  rx_header_motor[temp].RTR = CAN_RTR_DATA;
-  rx_header_motor[temp].DLC = 8;
-  rx_header_motor[temp].IDE=CAN_ID_STD;
-  temp++;
-}
+  while (temp<4) {
+    rx_header_motor[temp].StdId = 0x200;
+    rx_header_motor[temp].ExtId = 0;
+    rx_header_motor[temp].RTR = CAN_RTR_DATA;
+    rx_header_motor[temp].DLC = 8;
+    rx_header_motor[temp].IDE=CAN_ID_STD;
+    temp++;
+  }
 
-  HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0,&rx_header_motor[0], rx_date);
-
-
+  //配置CAN滤波器
+  sFilterConfig.FilterActivation = ENABLE;
+  sFilterConfig.FilterBank = 0;
+  sFilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  sFilterConfig.FilterMode=CAN_FILTERMODE_IDMASK;
+  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  sFilterConfig.FilterIdHigh = 0x200<<5;
+  sFilterConfig.FilterIdLow = 0x0000;
+  sFilterConfig.FilterMaskIdHigh = 0x3ff<<5;
+  sFilterConfig.FilterMaskIdLow = 0x0000;
+  //启动过滤器
+  HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
+  //启动中断
+  HAL_CAN_ActiveRxFifo(hcan1,CAN_RX_FIFO0_MSG_PENDING);
 
   /* USER CODE END 2 */
 
