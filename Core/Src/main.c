@@ -149,7 +149,7 @@ int main(void)
   //启动过滤器
   HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
   //启动中断
-  HAL_CAN_ActiveRxFifo(hcan1,CAN_RX_FIFO0_MSG_PENDING);
+  HAL_CAN_ActivateNotification(&hcan1,CAN_IT_RX_FIFO0_MSG_PENDING);
 
   /* USER CODE END 2 */
 
