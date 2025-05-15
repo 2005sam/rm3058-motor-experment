@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include <stdio.h>
+#include "MotorRM3508Drive.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -117,35 +118,17 @@ int main(void)
   HAL_CAN_Start(&hcan1);
 
   //配置电机帧头信息
-  tx_header_motor.StdId = 0x200;
-  tx_header_motor.ExtId = 0;
-  tx_header_motor.RTR = CAN_RTR_DATA;
-  tx_header_motor.DLC = 8;
-  tx_header_motor.IDE=CAN_ID_STD;
-  tx_header_motor.TransmitGlobalTime = DISABLE;
-
+  motor_RM3508_tx_header(tx_header_motor);
 
   //接受电机数据的帧头信息
   int temp=0;
   while (temp<4) {
-    rx_header_motor[temp].StdId = 0x200;
-    rx_header_motor[temp].ExtId = 0;
-    rx_header_motor[temp].RTR = CAN_RTR_DATA;
-    rx_header_motor[temp].DLC = 8;
-    rx_header_motor[temp].IDE=CAN_ID_STD;
+    motor_RM3508_each_rx_header(rx_header_motor[temp],temp);
     temp++;
   }
-
+MotorRM3508Drive_Init();
   //配置CAN滤波器
-  sFilterConfig.FilterActivation = ENABLE;
-  sFilterConfig.FilterBank = 0;
-  sFilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  sFilterConfig.FilterMode=CAN_FILTERMODE_IDMASK;
-  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-  sFilterConfig.FilterIdHigh = 0x200<<5;
-  sFilterConfig.FilterIdLow = 0x0000;
-  sFilterConfig.FilterMaskIdHigh = 0x3ff<<5;
-  sFilterConfig.FilterMaskIdLow = 0x0000;
+   motor_RM3508_sFilterConfig(sFilterConfig);
   //启动过滤器
   HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
   //启动中断
