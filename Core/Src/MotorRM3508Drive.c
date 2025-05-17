@@ -2,7 +2,7 @@
 #include "MotorRM3508Drive.h"
 
 
-#define motor_rx_fifo(num) CAN_RX_FIFO##num
+#define motor_rx_fifo(num) CAN_RX_FIFO ## num
 #define  motor_rx_number(i,j) i##j 
 #define motor_tx_number(i) do{\
 	tx_data[2*i-2] = motor##i>>8;\
@@ -44,17 +44,17 @@
 
 
 static CAN_TxHeaderTypeDef tx_header_motor;
-static CAN_RxHeaderTypeDef rx_header_motor[4]={0};
+static CAN_RxHeaderTypeDef rx_header_motor[4];
 static CAN_FilterTypeDef sFilterConfig; 
-static CAN_HandleTypeDef hacn;
+static CAN_HandleTypeDef hcan;
 static uint32_t Rxfifo;
 struct rx_date_motor_rm3508_struct motor_rx_date;
 
 //CAN1 init function
-void motor_RM3508_Init(CAN_HandleTypeDef const *const hcan1,char fifo_number)
+void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number)
 {
-	Rxfifo = motor_rx_fifo(fifo_number);
-	hacn = *hcan1;
+	Rxfifo = motor_rx_fifo(0);
+	hcan = *hcan1;
 	int temp=0;
        	while (temp<4) {
 		motor_RM3508_each_rx_header(rx_header_motor[temp],temp);
@@ -62,24 +62,25 @@ void motor_RM3508_Init(CAN_HandleTypeDef const *const hcan1,char fifo_number)
 	}
 	motor_RM3508_tx_header(tx_header_motor);
 	motor_RM3508_sFilterConfig(sFilterConfig);
-	HAL_CAN_ActiveNotification(&hacn,motor_active_it(fifo_number));
+	HAL_CAN_ActivateNotification(&hcan,motor_active_it(0));
 
 }
 void moter_rm3508_tx_massage(uint16_t motor1,uint16_t motor2,uint16_t motor3,uint16_t motor4)
 {
+	uint32_t tx_mailbox;
 	uint8_t tx_data[8] = {0};
 	motor_tx_number(1);
 	motor_tx_number(2);
 	motor_tx_number(3);
 	motor_tx_number(4);
 
-	HAL_CAN_AddTxMessage(&hcan1,&tx_header_motor,tx_data,&tx_mailbox);
+	HAL_CAN_AddTxMessage(&hcan,&tx_header_motor,tx_data,&tx_mailbox);
 }
 
 struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
 {
 	uint8_t rx_date[8];
-	if(HAL_CAN_GetRxMessage(&hcan1,Rxfifo,rx_header_motor[0],rx_date)==HAL_OK)
+	if(HAL_CAN_GetRxMessage(&hcan,Rxfifo,&rx_header_motor[0],rx_date)==HAL_OK)
 	{
 
 		motor_rx_date.angle = (rx_date[0]<<8 | rx_date[1])/8191.0f;
@@ -90,11 +91,13 @@ struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
 	}
 }	
 
-CAN_Rx_FifoMsg_PendingCallback(Rxfifo)
+CAN_Rx_FifoMsg_PendingCallback(0)
 {
 	struct rx_date_motor_rm3508_struct motor_rx_date_it;
 	motor_rx_date_it = motor_rm3508_rx_massage();
 	motor_rm3508_MSgPendingCallback(motor_rx_date_it);
 }
 
-
+void __attribute__((weak)) motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date)
+{
+}

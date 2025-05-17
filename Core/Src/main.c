@@ -47,14 +47,18 @@ CAN_HandleTypeDef hcan1;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
+/*
 CAN_TxHeaderTypeDef tx_header_motor;
 uint8_t tx_data[8] = {0};
 uint32_t tx_mailbox; 
+*/
 uint16_t torque=0;
+/*
 CAN_RxHeaderTypeDef rx_header_motor[4]={0};
 uint8_t rx_date[8];
 struct rx_date_motor_struct{float angle;uint16_t rpm;uint16_t current;uint8_t temperture;} motor_rx_date;
 CAN_FilterTypeDef sFilterConfig;
+*/
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -68,6 +72,7 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+/*
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	uint8_t rx_date[8];
@@ -80,6 +85,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		sprintf(usart_send,"%.2f,%d,%d,%d\n",motor_rx_date.angle,motor_rx_date.rpm,motor_rx_date.current,motor_rx_date.temperture);
 		HAL_UART_Transmit(&huart1,(uint8_t*)usart_send,strlen(usart_send),100);
 	}
+}
+*/
+void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date)
+{
+		char usart_send[100];
+		sprintf(usart_send,"%.2f,%d,%d,%d\n",rx_date.angle,rx_date.rpm,rx_date.current,rx_date.temperture);
+		HAL_UART_Transmit(&huart1,(uint8_t*)usart_send,strlen(usart_send),100);
 }
 /* USER CODE END 0 */
 
@@ -118,21 +130,21 @@ int main(void)
   HAL_CAN_Start(&hcan1);
 
   //配置电机帧头信息
-  motor_RM3508_tx_header(tx_header_motor);
+  // motor_RM3508_tx_header(tx_header_motor);
 
   //接受电机数据的帧头信息
-  int temp=0;
-  while (temp<4) {
-    motor_RM3508_each_rx_header(rx_header_motor[temp],temp);
-    temp++;
-  }
-MotorRM3508Drive_Init();
+  //int temp=0;
+  //while (temp<4) {
+  // motor_RM3508_each_rx_header(rx_header_motor[temp],temp);
+  //  temp++;
+  //}
+  motor_RM3508_Init(&hcan1,0);
   //配置CAN滤波器
-   motor_RM3508_sFilterConfig(sFilterConfig);
+  //motor_RM3508_sFilterConfig(sFilterConfig);
   //启动过滤器
-  HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
+  //HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
   //启动中断
-  HAL_CAN_ActivateNotification(&hcan1,CAN_IT_RX_FIFO0_MSG_PENDING);
+  //HAL_CAN_ActivateNotification(&hcan1,CAN_IT_RX_FIFO0_MSG_PENDING);
 
   /* USER CODE END 2 */
 
@@ -144,17 +156,22 @@ MotorRM3508Drive_Init();
 	  while(torque<1000)
 	  {
 		  torque+=50;
-		  tx_data[0] = torque>>8;
+		  moter_rm3508_tx_massage(torque,0,0,0);
+		  /*tx_data[0] = torque>>8;
 		  tx_data[1] = torque;
   		  HAL_CAN_AddTxMessage(&hcan1,&tx_header_motor,tx_data,&tx_mailbox);
+		  */
 		  HAL_Delay(50);
 	  }
 	  while(torque>-1000)
 	  {
 		  torque-=50;
+		  moter_rm3508_tx_massage(torque,0,0,0);
+		  /*
 		  tx_data[0] = torque>>8;
 		  tx_data[1] = torque;
   		  HAL_CAN_AddTxMessage(&hcan1,&tx_header_motor,tx_data,&tx_mailbox);
+		  */
 		  HAL_Delay(50);
 	  }
 
