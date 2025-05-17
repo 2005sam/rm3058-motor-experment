@@ -1,6 +1,8 @@
 #include "stm32f4xx_hal.h"
 #include "MotorRM3508Drive.h"
-#define motor_rx_fifo(num) CAN_RX_FIFO ## num
+
+
+#define motor_rx_fifo(num) CAN_RX_FIFO##num
 #define  motor_rx_number(i,j) i##j 
 #define motor_tx_number(i) do{\
 	tx_data[2*i-2] = motor##i>>8;\
@@ -8,6 +10,38 @@
 }while(0)
 #define motor_active_it(i) CAN_IT_RX_FIFO##i##_MSG_PENDING
 #define CAN_Rx_FifoMsg_PendingCallback(i) void CAN_Rx_Fifo##i##_Msg_PendingCallback(CAN_HandleTypeDef *hcan)
+
+
+#define motor_RM3508_tx_header(motor)do{\
+	motor.StdId = 0x200;\
+	motor.ExtId = 0;\
+	motor.RTR = CAN_RTR_DATA;\
+	motor.DLC = 8;\
+	motor.IDE=CAN_ID_STD;\
+	motor.TransmitGlobalTime = DISABLE;\
+}while(0)
+
+#define motor_RM3508_each_rx_header(motor,date)do{\
+	motor.StdId = 0x201+date;\
+	motor.ExtId = 0;\
+	motor.RTR = CAN_RTR_DATA;\
+	motor.DLC = 8;\
+	motor.IDE=CAN_ID_STD;\
+}while(0)
+
+#define motor_RM3508_sFilterConfig(sFilterConfig)do{\
+	 sFilterConfig.FilterActivation = ENABLE;\
+	 sFilterConfig.FilterBank = 0;\
+	 sFilterConfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;\
+	 sFilterConfig.FilterMode=CAN_FILTERMODE_IDMASK;\
+	 sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;\
+	 sFilterConfig.FilterIdHigh = 0x200<<5;\
+	 sFilterConfig.FilterIdLow = 0x0000;\
+	 sFilterConfig.FilterMaskIdHigh = 0x3ff<<5;\
+	 sFilterConfig.FilterMaskIdLow = 0x0000;\
+ }while(0)
+
+
 
 static CAN_TxHeaderTypeDef tx_header_motor;
 static CAN_RxHeaderTypeDef rx_header_motor[4]={0};
@@ -56,12 +90,11 @@ struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
 	}
 }	
 
-CAN_Rx_FifoMsg_PendingCallback(0)
+CAN_Rx_FifoMsg_PendingCallback(Rxfifo)
 {
 	struct rx_date_motor_rm3508_struct motor_rx_date_it;
 	motor_rx_date_it = motor_rm3508_rx_massage();
 	motor_rm3508_MSgPendingCallback(motor_rx_date_it);
 }
 
-void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date);
 
