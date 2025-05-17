@@ -48,12 +48,18 @@ static CAN_RxHeaderTypeDef rx_header_motor[4];
 static CAN_FilterTypeDef sFilterConfig; 
 static CAN_HandleTypeDef hcan;
 static uint32_t Rxfifo;
+static char fifo_number;
 struct rx_date_motor_rm3508_struct motor_rx_date;
 
 //CAN1 init function
-void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number)
+void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number_input)
 {
-	Rxfifo = motor_rx_fifo(0);
+	fifo_number=fifo_number_input;
+	if(fifo_number){
+		Rxfifo = motor_rx_fifo(0);
+	}else{
+		Rxfifo = motor_rx_fifo(1);
+	}
 	hcan = *hcan1;
 	int temp=0;
        	while (temp<4) {
@@ -62,7 +68,13 @@ void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number)
 	}
 	motor_RM3508_tx_header(tx_header_motor);
 	motor_RM3508_sFilterConfig(sFilterConfig);
+	if(fifo_number){
 	HAL_CAN_ActivateNotification(&hcan,motor_active_it(0));
+	}else{
+		HAL_CAN_ActivateNotification(&hcan,motor_active_it(1));
+	}
+	HAL_CAN_ConfigFilter(&hcan,&sFilterConfig);
+	HAL_CAN_Start(&hcan);
 
 }
 void moter_rm3508_tx_massage(uint16_t motor1,uint16_t motor2,uint16_t motor3,uint16_t motor4)
@@ -93,11 +105,22 @@ struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
 
 CAN_Rx_FifoMsg_PendingCallback(0)
 {
+	if(fifo_number==1)
+		return;
 	struct rx_date_motor_rm3508_struct motor_rx_date_it;
 	motor_rx_date_it = motor_rm3508_rx_massage();
-	motor_rm3508_MSgPendingCallback(motor_rx_date_it);
+	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
 }
 
-void __attribute__((weak)) motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date)
+CAN_Rx_FifoMsg_PendingCallback(1)
+{
+	if(fifo_number==0)
+		return;
+	struct rx_date_motor_rm3508_struct motor_rx_date_it;
+	motor_rx_date_it = motor_rm3508_rx_massage();
+	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
+}
+
+void __attribute__((weak)) motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,CAN_HandleTypeDef *hcan)
 {
 }

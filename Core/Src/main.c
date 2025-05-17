@@ -87,7 +87,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	}
 }
 */
-void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date)
+void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,CAN_HandleTypeDef *hcan)
 {
 		char usart_send[100];
 		sprintf(usart_send,"%.2f,%d,%d,%d\n",rx_date.angle,rx_date.rpm,rx_date.current,rx_date.temperture);
