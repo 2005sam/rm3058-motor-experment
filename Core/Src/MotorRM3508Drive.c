@@ -101,6 +101,7 @@ struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
 		motor_rx_date.temperture = rx_date[6];
 		return motor_rx_date;
 	}
+	return motor_rx_date;
 }	
 
 CAN_Rx_FifoMsg_PendingCallback(0)
@@ -119,8 +120,4 @@ CAN_Rx_FifoMsg_PendingCallback(1)
 	struct rx_date_motor_rm3508_struct motor_rx_date_it;
 	motor_rx_date_it = motor_rm3508_rx_massage();
 	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
-}
-
-void __attribute__((weak)) motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,CAN_HandleTypeDef *hcan)
-{
 }
