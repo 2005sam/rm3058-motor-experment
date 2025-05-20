@@ -52,7 +52,7 @@ CAN_TxHeaderTypeDef tx_header_motor;
 uint8_t tx_data[8] = {0};
 uint32_t tx_mailbox; 
 */
-uint16_t torque=0;
+int16_t torque=0;
 /*
 CAN_RxHeaderTypeDef rx_header_motor[4]={0};
 uint8_t rx_date[8];
