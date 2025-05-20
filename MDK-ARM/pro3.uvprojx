@@ -391,6 +391,16 @@
           <GroupName>Application/User/Core</GroupName>
           <Files>
             <File>
+              <FileName>MotorRM3508Drive.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\MotorRM3508Drive.c</FilePath>
+            </File>
+            <File>
+              <FileName>MotorRM3508Drive.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\MotorRM3508Drive.h</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>
@@ -404,16 +414,6 @@
               <FileName>stm32f4xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f4xx_hal_msp.c</FilePath>
-            </File>
-            <File>
-              <FileName>MotorRM3508Drive.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\MotorRM3508Drive.c</FilePath>
-            </File>
-            <File>
-              <FileName>MotorRM3508Drive.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\Core\Inc\MotorRM3508Drive.h</FilePath>
             </File>
           </Files>
         </Group>
