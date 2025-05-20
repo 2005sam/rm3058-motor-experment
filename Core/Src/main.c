@@ -91,7 +91,7 @@ void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,
 {
 		char usart_send[100];
 		sprintf(usart_send,"%.2f,%d,%d,%d\n",rx_date.angle,rx_date.rpm,rx_date.current,rx_date.temperture);
-		HAL_UART_Transmit(&huart1,(uint8_t*)usart_send,strlen(usart_send),100);
+		HAL_UART_Transmit(&huart2,(uint8_t*)usart_send,strlen(usart_send),100);
 }
 /* USER CODE END 0 */
 
