@@ -37,7 +37,7 @@
 	 sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;\
 	 sFilterConfig.FilterIdHigh = 0x200<<5;\
 	 sFilterConfig.FilterIdLow = 0x0000;\
-	 sFilterConfig.FilterMaskIdHigh = 0x3ff<<5;\
+	 sFilterConfig.FilterMaskIdHigh = 0x7fe<<5;\
 	 sFilterConfig.FilterMaskIdLow = 0x0000;\
  }while(0)
 
