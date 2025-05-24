@@ -1,8 +1,31 @@
 #include "RM3508_motor_contral.h"
-#define speed_kp 1
-#define speed_ki 1 
-#define speed_kd 1
-void RM3508_Motor_SetSpeed(int16_t const *speed) 
+//#define speed_kp 1
+//#define speed_ki 1 
+//#define speed_kd 1
+
+//warring:this function is only used to regulating PID,plase delete it in the final version
+/***********************************************************************************************/
+float speed_kp = 1.0f; // Proportional gain
+float speed_ki = 1.0f; // Integral gain
+float speed_kd = 1.0f; // Derivative gain
+void receive_date(float date,char flag)
+{
+    if(flag == 0xA1)
+    {
+     speed_kp = date;
+    }
+    else if(flag == 0xA2)
+    {
+        speed_ki = date;
+    }
+    else if(flag == 0xA3)
+    {
+       speed_kd = date;
+    }
+
+}
+/***********************************************************************************************/
+void RM3508_Motor_SetSpeed(uint16_t const *speed) 
 {
     PIDController pidcontraller;
     float Kp = speed_kp;

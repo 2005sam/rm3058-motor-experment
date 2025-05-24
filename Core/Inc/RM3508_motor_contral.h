@@ -5,8 +5,8 @@
 #include "MotorRM3508Drive.h"
 #include "pid.h"
 
-void RM3508_Motor_SetSpeed(int16_t const * speed);
-
+void RM3508_Motor_SetSpeed(uint16_t const * speed);
+void receive_date(float date,char flag);
 
 
 #endif

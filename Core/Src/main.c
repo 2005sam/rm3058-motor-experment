@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "MotorRM3508Drive.h"
+#include "RM3508_motor_contral.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,6 +54,8 @@ uint8_t tx_data[8] = {0};
 uint32_t tx_mailbox; 
 */
 uint16_t torque=0;
+uint8_t rx_data[5];
+uint16_t speed = 1000; 
 /*
 CAN_RxHeaderTypeDef rx_header_motor[4]={0};
 uint8_t rx_date[8];
@@ -92,6 +95,22 @@ void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,
 		char usart_send[100];
 		sprintf(usart_send,"%.2f,%d,%d,%d\n",rx_date.angle,rx_date.rpm,rx_date.current,rx_date.temperture);
 		HAL_UART_Transmit(&huart2,(uint8_t*)usart_send,strlen(usart_send),100);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  // Process the received data
+  if (huart->Instance == USART2) {
+    float rev_date=rx_data[0]<<24 | rx_data[1]<<16 | rx_data[2]<<8 | rx_data[3];
+    char flag=rx_data[4];
+    if (flag==0xA4) {
+      // If the flag is 0xA4, it indicates a request to set speed
+      speed = (uint16_t)rev_date; // Convert received float to uint16_t
+    }else{
+    receive_date(rev_date, flag); // Call the function to process the received data
+    }
+    HAL_UART_Receive_IT(&huart2, &rx_data[5],5);
+  }
 }
 /* USER CODE END 0 */
 
@@ -146,13 +165,14 @@ int main(void)
   //HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
   //启动中断
   //HAL_CAN_ActivateNotification(&hcan1,CAN_IT_RX_FIFO0_MSG_PENDING);
-
+  HAL_UART_Receive_IT(&huart2,&rx_data[5], 5); // Start receiving data via UART
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /*
 	  //使电机正反转
 	  while(torque<1000)
 	  {
@@ -161,7 +181,7 @@ int main(void)
 		  /*tx_data[0] = torque>>8;
 		  tx_data[1] = torque;
   		  HAL_CAN_AddTxMessage(&hcan1,&tx_header_motor,tx_data,&tx_mailbox);
-		  */
+		  
 		  HAL_Delay(50);
 	  }
 	  while(torque>-1000)
@@ -172,10 +192,13 @@ int main(void)
 		  tx_data[0] = torque>>8;
 		  tx_data[1] = torque;
   		  HAL_CAN_AddTxMessage(&hcan1,&tx_header_motor,tx_data,&tx_mailbox);
-		  */
+		  
 		  HAL_Delay(50);
 	  }
-
+    */
+   // Example speed value
+   RM3508_Motor_SetSpeed(&speed); // Set the speed for the motor
+    
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
