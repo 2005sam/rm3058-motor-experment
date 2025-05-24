@@ -102,12 +102,11 @@ struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
 		return motor_rx_date;
 	}
 }	
-
+struct rx_date_motor_rm3508_struct motor_rx_date_it;
 CAN_Rx_FifoMsg_PendingCallback(0)
 {
 	if(fifo_number==1)
 		return;
-	struct rx_date_motor_rm3508_struct motor_rx_date_it;
 	motor_rx_date_it = motor_rm3508_rx_massage();
 	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
 }
@@ -116,9 +115,14 @@ CAN_Rx_FifoMsg_PendingCallback(1)
 {
 	if(fifo_number==0)
 		return;
-	struct rx_date_motor_rm3508_struct motor_rx_date_it;
+	
 	motor_rx_date_it = motor_rm3508_rx_massage();
 	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
+}
+
+struct rx_date_motor_rm3508_struct motor_rm3508_get_rx_date(void)
+{
+	return motor_rx_date_it;
 }
 
 void __attribute__((weak)) motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,CAN_HandleTypeDef *hcan)
