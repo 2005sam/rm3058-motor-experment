@@ -57,7 +57,8 @@ Core/Src/system_stm32f4xx.c \
 Core/Src/sysmem.c \
 Core/Src/syscalls.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c \
-Core/Src/MotorRM3508Drive.c
+Core/Src/MotorRM3508Drive.c\
+Core/Src/pid.c
 
 # ASM sources
 ASM_SOURCES =  \
