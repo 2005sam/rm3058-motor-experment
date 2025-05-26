@@ -97,19 +97,31 @@ void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,
 		HAL_UART_Transmit(&huart2,(uint8_t*)usart_send,strlen(usart_send),100);
 }
 
+float uint32_to_float_le(uint32_t value) {
+  float result;
+  uint8_t *p = (uint8_t*)&value;
+  uint32_t le_value = ((uint32_t)p[0]) | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+  memcpy(&result, &le_value, sizeof(float));
+  return result;
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   // Process the received data
   if (huart->Instance == USART2) {
-    float rev_date=rx_data[0]<<24 | rx_data[1]<<16 | rx_data[2]<<8 | rx_data[3];
+    float rev_date=0;
+    rev_date=uint32_to_float_le(rx_data[3]<<24 | rx_data[2]<<16 | rx_data[1]<<8 | rx_data[0]);
+    (float)rev_date;
     char flag=rx_data[4];
     if (flag==0xA4) {
       // If the flag is 0xA4, it indicates a request to set speed
-      speed = (uint16_t)rev_date; // Convert received float to uint16_t
+    speed = (uint16_t)rev_date; // Convert received float to uint16_t
     }else{
     receive_date(rev_date, flag); // Call the function to process the received data
     }
-    HAL_UART_Receive_IT(&huart2, &rx_data[5],5);
+		
+     HAL_UART_Receive_IT(&huart2, rx_data,5);
+   
   }
 }
 /* USER CODE END 0 */
