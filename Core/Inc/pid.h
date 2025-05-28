@@ -15,5 +15,6 @@ typedef struct
     float pre_err_integral;// Previous integral of error
 } PIDController;
 
-float PID_contral(PIDController *pid, float Kp, float Ki, float Kd, float sp, float fb);
+void PID_init(PIDController *pid, float Kp, float Ki, float Kd, float sp);
+float PID_compute(PIDController *pid);
 #endif
