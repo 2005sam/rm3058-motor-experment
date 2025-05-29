@@ -7,6 +7,6 @@
 
 void RM3508_Motor_SetSpeed(uint16_t const * speed);
 void receive_date(float date,char flag);
-
+void RM3508_PID_Motor_Init(void);
 
 #endif

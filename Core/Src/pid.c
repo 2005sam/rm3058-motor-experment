@@ -2,7 +2,7 @@
 
 
 //initializes the PID controller with specified gains and setpoint
-  void PID_init(PIDController *pid, float Kp, float Ki, float Kd, float sp) {
+  void PID_init(PIDController *pid, float Kp, float Ki, float Kd, float sp, float max_output) {
     pid->Kp = Kp;
     pid->Ki = Ki;
     pid->Kd = Kd;
@@ -11,6 +11,13 @@
     pid->pre_time = 0; 
     pid->pre_err = 0;
     pid->pre_err_integral = 0;
+    pid->max_output = max_output; // Set the maximum output value, if needed
+
+}
+
+void pid_sp_set(PIDController *pid, float sp)
+{
+    pid->sp = sp; // Set the desired value (setpoint) for the PID controller
 }
 
  float PID_compute(PIDController *pid, float *fd)

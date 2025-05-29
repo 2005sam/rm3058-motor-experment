@@ -97,31 +97,19 @@ void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,
 		HAL_UART_Transmit(&huart2,(uint8_t*)usart_send,strlen(usart_send),100);
 }
 
-float uint32_to_float_le(uint32_t value) {
-  float result;
-  uint8_t *p = (uint8_t*)&value;
-  uint32_t le_value = ((uint32_t)p[0]) | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
-  memcpy(&result, &le_value, sizeof(float));
-  return result;
-}
-
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   // Process the received data
   if (huart->Instance == USART2) {
-    float rev_date=0;
-    rev_date=uint32_to_float_le(rx_data[3]<<24 | rx_data[2]<<16 | rx_data[1]<<8 | rx_data[0]);
-    (float)rev_date;
+    float rev_date=rx_data[0]<<24 | rx_data[1]<<16 | rx_data[2]<<8 | rx_data[3];
     char flag=rx_data[4];
     if (flag==0xA4) {
       // If the flag is 0xA4, it indicates a request to set speed
-    speed = (uint16_t)rev_date; // Convert received float to uint16_t
+      speed = (uint16_t)rev_date; // Convert received float to uint16_t
     }else{
     receive_date(rev_date, flag); // Call the function to process the received data
     }
-		
-     HAL_UART_Receive_IT(&huart2, rx_data,5);
-   
+    HAL_UART_Receive_IT(&huart2, &rx_data[5],5);
   }
 }
 /* USER CODE END 0 */
@@ -178,6 +166,7 @@ int main(void)
   //启动中断
   //HAL_CAN_ActivateNotification(&hcan1,CAN_IT_RX_FIFO0_MSG_PENDING);
   HAL_UART_Receive_IT(&huart2,&rx_data[5], 5); // Start receiving data via UART
+  RM3508_PID_Motor_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -210,7 +199,7 @@ int main(void)
     */
    // Example speed value
    RM3508_Motor_SetSpeed(&speed); // Set the speed for the motor
-    
+  HAL_Delay(100); // Delay to allow the motor to adjust speed
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -341,8 +330,8 @@ static void MX_USART2_UART_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
-  /* USER CODE END MX_GPIO_Init_1 */
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -370,8 +359,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN MX_GPIO_Init_2 */
-  /* USER CODE END MX_GPIO_Init_2 */
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
