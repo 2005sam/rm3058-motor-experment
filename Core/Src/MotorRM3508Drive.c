@@ -56,9 +56,9 @@ void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number_input)
 {
 	fifo_number=fifo_number_input;
 	if(fifo_number){
-		Rxfifo = motor_rx_fifo(0);
-	}else{
 		Rxfifo = motor_rx_fifo(1);
+	}else{
+		Rxfifo = motor_rx_fifo(0);
 	}
 	hcan = *hcan1;
 	int temp=0;
@@ -69,15 +69,15 @@ void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number_input)
 	motor_RM3508_tx_header(tx_header_motor);
 	motor_RM3508_sFilterConfig(sFilterConfig);
 	if(fifo_number){
-	HAL_CAN_ActivateNotification(&hcan,motor_active_it(0));
-	}else{
 		HAL_CAN_ActivateNotification(&hcan,motor_active_it(1));
+	}else{
+		HAL_CAN_ActivateNotification(&hcan,motor_active_it(0));
 	}
 	HAL_CAN_ConfigFilter(&hcan,&sFilterConfig);
 	HAL_CAN_Start(&hcan);
 
 }
-void moter_rm3508_tx_massage(uint16_t motor1,uint16_t motor2,uint16_t motor3,uint16_t motor4)
+void moter_rm3508_tx_massage(int16_t motor1,int16_t motor2,int16_t motor3,int16_t motor4)
 {
 	uint32_t tx_mailbox;
 	uint8_t tx_data[8] = {0};
@@ -101,23 +101,29 @@ struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
 		motor_rx_date.temperture = rx_date[6];
 		return motor_rx_date;
 	}
-	return motor_rx_date;
 }	
 
-CAN_Rx_FifoMsg_PendingCallback(0)
+struct rx_date_motor_rm3508_struct motor_rx_date_it;
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	if(fifo_number==1)
 		return;
-	struct rx_date_motor_rm3508_struct motor_rx_date_it;
+	
 	motor_rx_date_it = motor_rm3508_rx_massage();
 	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
 }
 
-CAN_Rx_FifoMsg_PendingCallback(1)
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	if(fifo_number==0)
 		return;
-	struct rx_date_motor_rm3508_struct motor_rx_date_it;
+	
 	motor_rx_date_it = motor_rm3508_rx_massage();
 	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
 }
+struct rx_date_motor_rm3508_struct motor_rm3508_get_rx_date(void)
+{
+	return motor_rx_date_it;
+}
+
+

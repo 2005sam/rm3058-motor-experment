@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "MotorRM3508Drive.h"
+#include "RM3508_motor_contral.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,7 +45,7 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
 
-UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 /*
@@ -52,7 +53,10 @@ CAN_TxHeaderTypeDef tx_header_motor;
 uint8_t tx_data[8] = {0};
 uint32_t tx_mailbox; 
 */
-int16_t torque=0;
+uint16_t torque=0;
+uint8_t rx_data[5];
+uint16_t speed = 10; 
+char usart_send[100]="66";
 /*
 CAN_RxHeaderTypeDef rx_header_motor[4]={0};
 uint8_t rx_date[8];
@@ -65,7 +69,7 @@ CAN_FilterTypeDef sFilterConfig;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
-static void MX_USART2_UART_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -89,9 +93,25 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 */
 void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,CAN_HandleTypeDef *hcan)
 {
-		char usart_send[100];
+		
 		sprintf(usart_send,"%.2f,%d,%d,%d\n",rx_date.angle,rx_date.rpm,rx_date.current,rx_date.temperture);
-		HAL_UART_Transmit(&huart2,(uint8_t*)usart_send,strlen(usart_send),100);
+		
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  // Process the received data
+  if (huart->Instance == USART2) {
+    float rev_date=rx_data[0]<<24 | rx_data[1]<<16 | rx_data[2]<<8 | rx_data[3];
+    char flag=rx_data[4];
+    if (flag==0xA4) {
+      // If the flag is 0xA4, it indicates a request to set speed
+      speed = (uint16_t)rev_date; // Convert received float to uint16_t
+    }else{
+    receive_date(rev_date, flag); // Call the function to process the received data
+    }
+    HAL_UART_Receive_IT(&huart1, &rx_data[5],5);
+  }
 }
 /* USER CODE END 0 */
 
@@ -125,7 +145,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
-  MX_USART2_UART_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_CAN_Start(&hcan1);
   HAL_GPIO_WritePin(GPIOH,GPIO_PIN_4,GPIO_PIN_SET);
@@ -146,13 +166,15 @@ int main(void)
   //HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
   //启动中断
   //HAL_CAN_ActivateNotification(&hcan1,CAN_IT_RX_FIFO0_MSG_PENDING);
-
+  HAL_UART_Receive_IT(&huart1,&rx_data[5], 5); // Start receiving data via UART
+  RM3508_PID_Motor_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /*
 	  //使电机正反转
 	  while(torque<1000)
 	  {
@@ -161,7 +183,7 @@ int main(void)
 		  /*tx_data[0] = torque>>8;
 		  tx_data[1] = torque;
   		  HAL_CAN_AddTxMessage(&hcan1,&tx_header_motor,tx_data,&tx_mailbox);
-		  */
+		  
 		  HAL_Delay(50);
 	  }
 	  while(torque>-1000)
@@ -172,10 +194,14 @@ int main(void)
 		  tx_data[0] = torque>>8;
 		  tx_data[1] = torque;
   		  HAL_CAN_AddTxMessage(&hcan1,&tx_header_motor,tx_data,&tx_mailbox);
-		  */
+		  
 		  HAL_Delay(50);
 	  }
-
+    */
+   // Example speed value
+   HAL_UART_Transmit(&huart1,(uint8_t*)usart_send,strlen(usart_send),HAL_MAX_DELAY);
+   RM3508_Motor_SetSpeed(&speed); // Set the speed for the motor
+   HAL_Delay(100); // Delay to allow the motor to adjust speed
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -266,35 +292,35 @@ static void MX_CAN1_Init(void)
 }
 
 /**
-  * @brief USART2 Initialization Function
+  * @brief USART1 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_USART2_UART_Init(void)
+static void MX_USART1_UART_Init(void)
 {
 
-  /* USER CODE BEGIN USART2_Init 0 */
+  /* USER CODE BEGIN USART1_Init 0 */
 
-  /* USER CODE END USART2_Init 0 */
+  /* USER CODE END USART1_Init 0 */
 
-  /* USER CODE BEGIN USART2_Init 1 */
+  /* USER CODE BEGIN USART1_Init 1 */
 
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART2_Init 2 */
+  /* USER CODE BEGIN USART1_Init 2 */
 
-  /* USER CODE END USART2_Init 2 */
+  /* USER CODE END USART1_Init 2 */
 
 }
 
