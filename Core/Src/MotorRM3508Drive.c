@@ -56,9 +56,9 @@ void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number_input)
 {
 	fifo_number=fifo_number_input;
 	if(fifo_number){
-		Rxfifo = motor_rx_fifo(0);
-	}else{
 		Rxfifo = motor_rx_fifo(1);
+	}else{
+		Rxfifo = motor_rx_fifo(0);
 	}
 	hcan = *hcan1;
 	int temp=0;
@@ -69,9 +69,9 @@ void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number_input)
 	motor_RM3508_tx_header(tx_header_motor);
 	motor_RM3508_sFilterConfig(sFilterConfig);
 	if(fifo_number){
-	HAL_CAN_ActivateNotification(&hcan,motor_active_it(0));
-	}else{
 		HAL_CAN_ActivateNotification(&hcan,motor_active_it(1));
+	}else{
+		HAL_CAN_ActivateNotification(&hcan,motor_active_it(0));
 	}
 	HAL_CAN_ConfigFilter(&hcan,&sFilterConfig);
 	HAL_CAN_Start(&hcan);
