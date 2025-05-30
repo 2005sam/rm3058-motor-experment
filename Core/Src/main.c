@@ -56,6 +56,7 @@ uint32_t tx_mailbox;
 uint16_t torque=0;
 uint8_t rx_data[5];
 uint16_t speed = 1000; 
+char usart_send[100];
 /*
 CAN_RxHeaderTypeDef rx_header_motor[4]={0};
 uint8_t rx_date[8];
@@ -92,9 +93,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 */
 void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,CAN_HandleTypeDef *hcan)
 {
-		char usart_send[100];
+		
 		sprintf(usart_send,"%.2f,%d,%d,%d\n",rx_date.angle,rx_date.rpm,rx_date.current,rx_date.temperture);
-		HAL_UART_Transmit(&huart2,(uint8_t*)usart_send,strlen(usart_send),100);
+		
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -198,8 +199,9 @@ int main(void)
 	  }
     */
    // Example speed value
+   HAL_UART_Transmit(&huart2,(uint8_t*)usart_send,strlen(usart_send),100);
    RM3508_Motor_SetSpeed(&speed); // Set the speed for the motor
-  HAL_Delay(100); // Delay to allow the motor to adjust speed
+   HAL_Delay(100); // Delay to allow the motor to adjust speed
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

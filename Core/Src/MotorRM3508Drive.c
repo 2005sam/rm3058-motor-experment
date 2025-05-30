@@ -77,7 +77,7 @@ void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number_input)
 	HAL_CAN_Start(&hcan);
 
 }
-void moter_rm3508_tx_massage(uint16_t motor1,uint16_t motor2,uint16_t motor3,uint16_t motor4)
+void moter_rm3508_tx_massage(int16_t motor1,int16_t motor2,int16_t motor3,int16_t motor4)
 {
 	uint32_t tx_mailbox;
 	uint8_t tx_data[8] = {0};
