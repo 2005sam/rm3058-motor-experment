@@ -101,7 +101,7 @@ void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   // Process the received data
-  if (huart->Instance == USART2) {
+  if (huart->Instance == USART1) {
     float rev_date=rx_data[0]<<24 | rx_data[1]<<16 | rx_data[2]<<8 | rx_data[3];
     char flag=rx_data[4];
     if (flag==0xA4) {
