@@ -34,28 +34,30 @@ void receive_date(float date,char flag)
 void RM3508_PID_Motor_Init(void)
 {
     // Initialize the PID controller with specified gains and setpoint
-    PID_init(&pidcontraller, speed_kp, speed_ki, speed_kd, 0.0f, 16384.0f); // Set max_output to 100.0f as an example
-    PID_init(&angle_pid_contraller, angle_kp, angle_ki, angle_kd, 0.0f, 16384.0f); // Set max_output to 100.0f as an example
+    PID_init(&pidcontraller, speed_kp, speed_ki, speed_kd,0.0f, 0.0f, 16384.0f,0.0f,0.0f); // Set max_output to 100.0f as an example
+    PID_init(&angle_pid_contraller, angle_kp, angle_ki, angle_kd,0.0f, 0.0f, 16384.0f,1.0,10.0); // Set max_output to 100.0f as an example
     pre_motor_speed = 0; // Initialize previous motor speed
 }
 
 void RM3508_Motor_SetSpeed(uint16_t const *speed) 
 {
-    float Kp = speed_kp;
-    float Ki = speed_ki;
-    float Kd = speed_kd;
     float sp = *speed;
     float co;
     float fb = 0;
-    if(pre_motor_speed != *speed) // Check if the speed has changed
+
+
+    //update setspeed if speed changed
+    if(pre_motor_speed != *speed) 
     {
-        pre_motor_speed = *speed; // Update the previous speed
-        pid_sp_set(&pidcontraller, (float)sp); // Set the desired value (setpoint) for the PID controller
+        pre_motor_speed = *speed; 
+        pid_sp_set(&pidcontraller, (float)sp);
     }
 
-    fb=(float)motor_rm3508_rx_massage().rpm; // Get the feedback value from the motor
-    co = PID_compute(&pidcontraller, &fb); // Compute the control output using the PID controller
-    moter_rm3508_tx_massage((uint16_t)co, 0, 0, 0); // Send the control output to the motor
+
+    //comput co and tx to moter
+    fb=(float)motor_rm3508_rx_massage().rpm; 
+    co = PID_compute(&pidcontraller, &fb); 
+    moter_rm3508_tx_massage((uint16_t)co, 0, 0, 0);
 
 }
 

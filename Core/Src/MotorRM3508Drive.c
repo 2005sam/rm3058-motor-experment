@@ -51,6 +51,8 @@ static uint32_t Rxfifo;
 static char fifo_number;
 struct rx_date_motor_rm3508_struct motor_rx_date;
 
+
+
 //CAN1 init function
 void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number_input)
 {
@@ -76,7 +78,12 @@ void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number_input)
 	HAL_CAN_ConfigFilter(&hcan,&sFilterConfig);
 	HAL_CAN_Start(&hcan);
 
+
 }
+
+
+
+// Function to prepare the data for transmission
 void moter_rm3508_tx_massage(int16_t motor1,int16_t motor2,int16_t motor3,int16_t motor4)
 {
 	uint32_t tx_mailbox;
@@ -89,6 +96,9 @@ void moter_rm3508_tx_massage(int16_t motor1,int16_t motor2,int16_t motor3,int16_
 	HAL_CAN_AddTxMessage(&hcan,&tx_header_motor,tx_data,&tx_mailbox);
 }
 
+
+
+// Function to process the received data from the motor
 struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
 {
 	uint8_t rx_date[8];
@@ -101,8 +111,11 @@ struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
 		motor_rx_date.temperture = rx_date[6];
 		return motor_rx_date;
 	}
-}	
+}
 
+
+
+// Callback function for CAN message pending in FIFO 0/1
 struct rx_date_motor_rm3508_struct motor_rx_date_it;
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
@@ -121,6 +134,8 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	motor_rx_date_it = motor_rm3508_rx_massage();
 	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
 }
+
+
 struct rx_date_motor_rm3508_struct motor_rm3508_get_rx_date(void)
 {
 	return motor_rx_date_it;
