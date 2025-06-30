@@ -2,7 +2,7 @@
 
 
 //initializes the PID controller with specified gains and setpoint
-  void PID_init(PIDController *pid, float Kp, float Ki, float Kd, float sp, float max_output) {
+  void PID_init(PIDController *pid, float Kp, float Ki, float Kd, float sp, float max_output,float ki_start_err) {
     pid->Kp = Kp;
     pid->Ki = Ki;
     pid->Kd = Kd;
@@ -12,7 +12,7 @@
     pid->pre_err = 0;
     pid->pre_err_integral = 0;
     pid->max_output = max_output; // Set the maximum output value, if needed
-
+    pid->ki_start_err= ki_start_err; // Set the start error for Ki to avoid integral windup at the beginning
 }
 
 void pid_sp_set(PIDController *pid, float sp)
@@ -22,19 +22,29 @@ void pid_sp_set(PIDController *pid, float sp)
 
  float PID_compute(PIDController *pid, float *fd)
 {
-    float err = 10- *fd; // Calculate the error as the difference between setpoint and feedback
+    float err = pid->sp- *fd; // Calculate the error as the difference between setpoint and feedback
     uint64_t current_time = HAL_GetTick(); 
     float dt = (current_time - pid->pre_time) *1.0e-6f;
-    float d_err = (err - pid->pre_err) / dt; 
+    float d_err = (err - pid->pre_err) / dt;
+    char ki_flag= 0; // Flag to indicate if Ki should be applied 
+    if(err> pid->ki_start_err || err < -pid->ki_start_err) { // Check if the error is greater than the start error for Ki
+        ki_flag = 1; // Set the flag to apply Ki
+    }
+
     float integral_err = pid->pre_err_integral + (err+pid->pre_err) * dt/2.0f; 
-    float cop=20*err;
-    float coi=10*integral_err;
-    float cod=pid->Kp* d_err;
+    float cop=pid->Kp*(err);
+    float coi=ki_flag*pid->Ki*integral_err;
+    float cod=pid->Kd* d_err;
     //update previous values    
     pid->pre_time = current_time;
     pid->pre_err = err;
     pid->pre_err_integral = integral_err;
-    //return the PID output
-    return cop + coi + cod;
+    float co= cop + coi + cod; // Calculate the control output as the sum of proportional, integral, and derivative terms
+    if(co > pid->max_output) {
+        co = pid->max_output; // Limit the output to the maximum value
+    } else if(co < -pid->max_output) {
+        co = -pid->max_output; // Limit the output to the minimum value
+    }
+    return co; // Return the control output
 
 }
