@@ -14,6 +14,8 @@ typedef struct
     float pre_err;// Previous error value
     float pre_err_integral;// Previous integral of error
     float max_output; // Maximum output value (optional, can be used for limiting)
+    float pid_ki_start_err; // Start error for Ki, used to avoid integral windup at the beginning
+    float deadband;
 } PIDController;
 
 void pid_sp_set(PIDController *pid, float sp);
