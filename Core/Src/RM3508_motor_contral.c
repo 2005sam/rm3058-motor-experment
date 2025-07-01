@@ -55,7 +55,7 @@ void RM3508_Motor_SetSpeed(int16_t const *speed)
 
 
     //comput co and tx to moter
-    fb=(float)motor_rm3508_rx_massage().rpm; 
+    fb=(float)motor_rm3508_rx_massage(0).rpm; 
     co = PID_compute(&pidcontraller, &fb); 
     moter_rm3508_tx_massage((int16_t)co, 0, 0, 0);
 
@@ -74,7 +74,7 @@ float RM3508_Motor_SetAngle(float angle)
     float fb = 0;
 
     pid_sp_set(&angle_pid_contraller, sp); // Set the desired value (setpoint) for the PID controller
-    fb = motor_rm3508_rx_massage().angle; // Get the feedback value from the motor
+    fb = motor_rm3508_rx_massage(0).angle; // Get the feedback value from the motor
     co = PID_compute(&angle_pid_contraller, &fb); // Compute the control output using the PID controller
     RM3508_Motor_SetSpeed((int16_t *)&co); // Set the speed based on the control output
     return co; // Return the control output (speed) to be set to the motor

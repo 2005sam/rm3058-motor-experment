@@ -104,46 +104,53 @@ void moter_rm3508_tx_massage(int16_t motor1,int16_t motor2,int16_t motor3,int16_
 
 
 // Function to process the received data from the moto,and return the processed data
-struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
+struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(char *motor_number)
 {
 	uint8_t rx_date[8];
-	if(HAL_CAN_GetRxMessage(&hcan,Rxfifo,&rx_header_motor[0],rx_date)==HAL_OK)
+	for(int i=0;i<4;i++)
 	{
-
-		motor_rx_date.angle = (rx_date[0]<<8 | rx_date[1])/8191.0f;
-		motor_rx_date.rpm = (rx_date[2]<<8 | rx_date[3]);
-		motor_rx_date.current = (rx_date[4]<<8 | rx_date[5]);
-		motor_rx_date.temperture = rx_date[6];
-		return motor_rx_date;
+		if(HAL_CAN_GetRxMessage(&hcan,Rxfifo,&rx_header_motor[i],rx_date)==HAL_OK)
+		{
+			*motor_number=i;
+			motor_rx_date.angle = (rx_date[0]<<8 | rx_date[1])/8191.0f;
+			motor_rx_date.rpm = (rx_date[2]<<8 | rx_date[3]);
+			motor_rx_date.current = (rx_date[4]<<8 | rx_date[5]);
+			motor_rx_date.temperture = rx_date[6];
+			return motor_rx_date;
+		}
 	}
 }
 
 
 
 // Callback function for CAN message pending in FIFO 0/1
-struct rx_date_motor_rm3508_struct motor_rx_date_it;
+struct rx_date_motor_rm3508_struct motor_rx_date_it[4];
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	if(fifo_number==1)
 		return;
-	
-	motor_rx_date_it = motor_rm3508_rx_massage();
-	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
+
+	char motor_number=0;
+
+	motor_rx_date_it[motor_number] = motor_rm3508_rx_massage(&motor_number);
+	motor_rm3508_MSgPendingCallback(motor_rx_date_it[motor_number],hcan);
+
 }
 
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	if(fifo_number==0)
 		return;
-	
-	motor_rx_date_it = motor_rm3508_rx_massage();
-	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
+
+	char motor_number=0;
+	motor_rx_date_it[motor_number] = motor_rm3508_rx_massage(&motor_number);
+	motor_rm3508_MSgPendingCallback(motor_rx_date_it[motor_number],hcan);
 }
 
 
-struct rx_date_motor_rm3508_struct motor_rm3508_get_rx_date(void)
+struct rx_date_motor_rm3508_struct motor_rm3508_get_rx_date(char motor_number)
 {
-	return motor_rx_date_it;
+	return motor_rx_date_it[motor_number];
 }
 
 
