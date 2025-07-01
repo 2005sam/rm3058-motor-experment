@@ -1,5 +1,19 @@
 #include "pid.h"
 
+struct PID_local_information{
+    char ki_flag;
+    float err;
+    float co;
+    float cof;
+    float dt;
+    float err_integral;
+    float fd;
+};
+
+extern void PID_pre_process(PIDController *pid,struct PID_local_information *local_info);
+extern float PID_compute_co(PIDController *pid, struct PID_local_information *local_info);
+extern float fedforward_compute(PIDController *pid, struct PID_local_information *local_info);
+extern void PID_after_process(PIDController *pid,struct PID_local_information *local_info,float *result);
 
 //initializes the PID controller with specified gains and setpoint
   void PID_init(PIDController *pid, float Kp, float Ki, float Kd,float fd, float fp, float max_output,float ki_start_err,float deadband)
@@ -23,68 +37,99 @@ void pid_sp_set(PIDController *pid, float sp)
 {
     pid->sp = sp;
 }
+
+
 // Computes the PID control output based on the current feedback value
- float PID_compute(PIDController *pid, float *fd)
+ float PID_compute(PIDController *pid, float *feedback)
 {
-    // Check if the previous time is zero, indicating this is the first call
+    // define a local information structure to hold intermediate values
+    struct PID_local_information local_info={
+        .ki_flag = 0, // Initialize ki_flag to 0
+        .err = 0.0f, // Initialize error to 0
+        .co = 0.0f, // Initialize control output to 0
+        .cof = 0.0f, // Initialize feedforward term to 0
+        .dt = 0.0f, // Initialize time difference to 0
+        .err_integral = 0.0f, // Initialize integral of error to 0
+        .fd=*feedback //Initialize feedback to feedback
+    };
+    
+    //pre-process the PID controller
+    PID_pre_process(pid, &local_info);
+    
+    //compute co in PID
+    float co= PID_compute_co(pid, &local_info);
+    
+    //compute feedforward term
+    float cof= fedforward_compute(pid, &local_info);
+    
+    // Calculate the total control output including feedforward
+    float result = co+cof;
+    //update the previous values and check the limits
+    PID_after_process(pid, &local_info, &result);
+    return result;
+}
+
+extern void PID_pre_process(PIDController *pid,struct PID_local_information *local_info)
+{
+     // Check if the previous time is zero, indicating this is the first call,and set current time
     if(pid->pre_time ==0){
         pid->pre_time = HAL_GetTick();
     }
     uint64_t current_time = HAL_GetTick(); 
-    
+    local_info->dt = (current_time - pid->pre_time) * 1.0e-6f; 
     
     // Calculate the error between the setpoint and feedback value
-    float err = pid->sp- *fd;
-    
+    local_info->err = pid->sp- local_info->fd;
     
     // Check if the error is within the deadband range
-    if(err > pid->deadband || err < -pid->deadband) {
-        err = 0; 
+    if(local_info->err > pid->deadband || local_info->err < -pid->deadband) {
+        local_info->err = 0; 
     }
-    
     
     //check if the error is greater than the start error for Ki
-    char ki_flag= 0;
-    if(err> pid->ki_start_err || err < -pid->ki_start_err) {
-        ki_flag = 1;
+    if(local_info->err > pid->ki_start_err || local_info->err < -pid->ki_start_err) {
+        local_info->ki_flag = 1;
     }
-    
+}
 
+extern float PID_compute_co(PIDController *pid, struct PID_local_information *local_info)
+{
     //compute the integral and derivative errors
-    float dt = (current_time - pid->pre_time) *1.0e-6f;
-    float d_err = (err - pid->pre_err) / dt;
-    float integral_err = pid->pre_err_integral + (err+pid->pre_err) * dt/2.0f; 
-    
+    float d_err = (local_info->err - pid->pre_err) / local_info->dt;
+    float integral_err = pid->pre_err_integral + (local_info->err+pid->pre_err) * local_info->dt/2.0f; 
+    local_info->err_integral = integral_err;
 
     //compute the cop, coi, and cod values
     // cop: proportional term, coi: integral term, cod: derivative term 
-    float cop=pid->Kp*(err);
-    float coi=ki_flag*pid->Ki*integral_err;
+    float cop=pid->Kp*(local_info->err);
+    float coi=pid->Ki*integral_err;
     float cod=pid->Kd* d_err;
     float co= cop + coi + cod;
-      
+    return co;
+}
+
+extern float fedforward_compute(PIDController *pid, struct  PID_local_information *local_info)
+{
     //compute the feedforward term
     if(pid->sp ==0){
         pid->sp = pid->pre_target;
     }
-    float cof= pid->fd * (pid->sp - pid->pre_target) / dt+(pid->sp - pid->pre_target) * pid->fp;
+    float cof= pid->fd * (pid->sp - pid->pre_target) / local_info->dt+(pid->sp - pid->pre_target) * pid->fp;
+    return cof;
+}
 
-    
+extern void PID_after_process(PIDController *pid,struct PID_local_information *local_info,float *result)
+{
     //update previous values    
-    pid->pre_time = current_time;
-    pid->pre_err = err;
-    pid->pre_err_integral = integral_err;
+    pid->pre_time = HAL_GetTick();
+    pid->pre_err = local_info->err;
+    pid->pre_err_integral = local_info->err_integral;
     pid->pre_target = pid->sp;
-    
-    
-    // Limit the control output to the maximum and minimum values
-    if(co > pid->max_output) {
-        co = pid->max_output; // Limit the output to the maximum value
-    } else if(co < -pid->max_output) {
-        co = -pid->max_output; // Limit the output to the minimum value
+
+     // Limit the control output to the maximum and minimum values
+    if(*result > pid->max_output) {
+        *result = pid->max_output; // Limit the output to the maximum value
+    } else if(*result < -pid->max_output) {
+        *result = -pid->max_output; // Limit the output to the minimum value
     }
-
-
-    return co+ cof; // Return the total control output including feedforward
-
 }

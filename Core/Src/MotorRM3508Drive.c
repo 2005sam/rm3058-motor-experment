@@ -8,10 +8,12 @@
 	tx_data[2*i-2] = motor##i>>8;\
 	tx_data[2*i-1] = motor##i;\
 }while(0)
+
 #define motor_active_it(i) CAN_IT_RX_FIFO##i##_MSG_PENDING
+//this define is not working
 #define CAN_Rx_FifoMsg_PendingCallback(i) void CAN_Rx_Fifo##i##_Msg_PendingCallback(CAN_HandleTypeDef *hcan)
 
-
+//define motor RM3508 tx massage can communication protocol
 #define motor_RM3508_tx_header(motor)do{\
 	motor.StdId = 0x200;\
 	motor.ExtId = 0;\
@@ -21,6 +23,8 @@
 	motor.TransmitGlobalTime = DISABLE;\
 }while(0)
 
+//define motor RM3508 each rx header can communication protocol
+// the date is the motor number,0-3,corresponding to motor 1-4
 #define motor_RM3508_each_rx_header(motor,date)do{\
 	motor.StdId = 0x201+date;\
 	motor.ExtId = 0;\
@@ -29,6 +33,7 @@
 	motor.IDE=CAN_ID_STD;\
 }while(0)
 
+//define can filter configuration for RM3508 motor
 #define motor_RM3508_sFilterConfig(sFilterConfig)do{\
 	 sFilterConfig.FilterActivation = ENABLE;\
 	 sFilterConfig.FilterBank = 0;\
@@ -98,7 +103,7 @@ void moter_rm3508_tx_massage(int16_t motor1,int16_t motor2,int16_t motor3,int16_
 
 
 
-// Function to process the received data from the motor
+// Function to process the received data from the moto,and return the processed data
 struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
 {
 	uint8_t rx_date[8];
