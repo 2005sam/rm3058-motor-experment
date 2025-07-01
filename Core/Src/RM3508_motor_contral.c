@@ -2,9 +2,9 @@
 //#define speed_kp 1
 //#define speed_ki 1 
 //#define speed_kd 1
-#define angle_kp 10.0f // Proportional gain for angle control
-#define angle_ki 15.0f // Integral gain for angle control
-#define angle_kd 25.0f // Derivative gain for angle control
+#define angle_kp 100.0f // Proportional gain for angle control
+#define angle_ki 100.0f // Integral gain for angle control
+#define angle_kd 0.0f // Derivative gain for angle control
 
 PIDController pidcontraller;
 PIDController angle_pid_contraller;

@@ -131,8 +131,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 		return;
 
 	char motor_number=0;
-
-	motor_rx_date_it[motor_number] = motor_rm3508_rx_massage(&motor_number);
+	struct rx_date_motor_rm3508_struct  temp= motor_rm3508_rx_massage(&motor_number);
+	motor_rx_date_it[motor_number] = temp;
 	motor_rm3508_MSgPendingCallback(motor_rx_date_it[motor_number],hcan);
 
 }
