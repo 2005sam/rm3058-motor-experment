@@ -200,7 +200,8 @@ int main(void)
     */
    // Example speed value
    HAL_UART_Transmit(&huart1,(uint8_t*)usart_send,strlen(usart_send),HAL_MAX_DELAY);
-   RM3508_Motor_SetSpeed(&speed); // Set the speed for the motor
+   //RM3508_Motor_SetSpeed(&speed); // Set the speed for the motor
+   RM3508_Motor_SetAngle(0.25);
    HAL_Delay(100); // Delay to allow the motor to adjust speed
     /* USER CODE END WHILE */
 
