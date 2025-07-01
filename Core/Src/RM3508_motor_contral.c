@@ -8,7 +8,7 @@
 
 PIDController pidcontraller;
 PIDController angle_pid_contraller;
-uint16_t pre_motor_speed = 0; // Previous motor speed, used to avoid oscillation
+int16_t pre_motor_speed = 0; // Previous motor speed, used to avoid oscillation
 //warring:this function is only used to regulating PID,plase delete it in the final version
 /***********************************************************************************************/
 float speed_kp = 20.0f; // Proportional gain
@@ -39,7 +39,7 @@ void RM3508_PID_Motor_Init(void)
     pre_motor_speed = 0; // Initialize previous motor speed
 }
 
-void RM3508_Motor_SetSpeed(uint16_t const *speed) 
+void RM3508_Motor_SetSpeed(int16_t const *speed) 
 {
     float sp = *speed;
     float co;
@@ -57,7 +57,7 @@ void RM3508_Motor_SetSpeed(uint16_t const *speed)
     //comput co and tx to moter
     fb=(float)motor_rm3508_rx_massage().rpm; 
     co = PID_compute(&pidcontraller, &fb); 
-    moter_rm3508_tx_massage((uint16_t)co, 0, 0, 0);
+    moter_rm3508_tx_massage((int16_t)co, 0, 0, 0);
 
 }
 
@@ -76,6 +76,6 @@ float RM3508_Motor_SetAngle(float angle)
     pid_sp_set(&angle_pid_contraller, sp); // Set the desired value (setpoint) for the PID controller
     fb = motor_rm3508_rx_massage().angle; // Get the feedback value from the motor
     co = PID_compute(&angle_pid_contraller, &fb); // Compute the control output using the PID controller
-    RM3508_Motor_SetSpeed((uint16_t *)&co); // Set the speed based on the control output
+    RM3508_Motor_SetSpeed((int16_t *)&co); // Set the speed based on the control output
     return co; // Return the control output (speed) to be set to the motor
 }

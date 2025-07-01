@@ -44,7 +44,7 @@ void pid_sp_set(PIDController *pid, float sp)
 {
     // define a local information structure to hold intermediate values
     struct PID_local_information local_info={
-        .ki_flag = 0, // Initialize ki_flag to 0
+        .ki_flag = 1, // Initialize ki_flag to 0
         .err = 0.0f, // Initialize error to 0
         .co = 0.0f, // Initialize control output to 0
         .cof = 0.0f, // Initialize feedforward term to 0
@@ -88,7 +88,7 @@ extern void PID_pre_process(PIDController *pid,struct PID_local_information *loc
     
     //check if the error is greater than the start error for Ki
     if(local_info->err > pid->ki_start_err || local_info->err < -pid->ki_start_err) {
-        local_info->ki_flag = 1;
+        local_info->ki_flag = 0;
     }
 }
 
@@ -126,7 +126,7 @@ extern void PID_after_process(PIDController *pid,struct PID_local_information *l
     pid->pre_err_integral = local_info->err_integral;
     pid->pre_target = pid->sp;
 
-     // Limit the control output to the maximum and minimum values
+    // Limit the control output to the maximum and minimum values
     if(*result > pid->max_output) {
         *result = pid->max_output; // Limit the output to the maximum value
     } else if(*result < -pid->max_output) {
