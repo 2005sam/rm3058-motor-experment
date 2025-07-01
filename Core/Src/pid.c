@@ -16,7 +16,7 @@ extern float fedforward_compute(PIDController *pid, struct PID_local_information
 extern void PID_after_process(PIDController *pid,struct PID_local_information *local_info,float *result);
 
 //initializes the PID controller with specified gains and setpoint
-  void PID_init(PIDController *pid, float Kp, float Ki, float Kd,float fd, float fp, float max_output,float ki_start_err,float deadband)
+  void PID_init(PIDController *pid, float Kp, float Ki, float Kd,float fd, float fp, float max_output,float ki_start_err,float deadband,char flag_circle,float maxnumber)
 {
     pid->Kp = Kp;
     pid->Ki = Ki;
@@ -30,6 +30,8 @@ extern void PID_after_process(PIDController *pid,struct PID_local_information *l
     pid->max_output = max_output; 
     pid->ki_start_err= ki_start_err;
     pid->deadband=deadband;
+    pid->flag_circle= flag_circle;
+    pid->maxnumber = maxnumber;
 }
 
 //update setpoint for the PID controller
@@ -80,7 +82,14 @@ extern void PID_pre_process(PIDController *pid,struct PID_local_information *loc
     
     // Calculate the error between the setpoint and feedback value
     local_info->err = pid->sp- local_info->fd;
-    
+    //if in the circular mode, adjust the error to the closest pass
+    if(pid->flag_circle==1&&(2*local_info->err > pid->maxnumber||2*local_info->err < -pid->maxnumber)){
+        if(local_info->err > 0){
+            local_info->err -= pid->maxnumber; // Adjust error for circular mode
+        }else{
+            local_info->err += pid->maxnumber; // Adjust error for circular mode
+        }
+    }
     // Check if the error is within the deadband range
     if(local_info->err > pid->deadband || local_info->err < -pid->deadband) {
         local_info->err = 0; 

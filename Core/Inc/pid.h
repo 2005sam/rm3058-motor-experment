@@ -19,9 +19,11 @@ typedef struct
     float max_output; // Maximum output value (optional, can be used for limiting)
     float ki_start_err; // Start error for Ki, used to avoid integral windup at the beginning
     float deadband;
+    char flag_circle; // Flag to indicate if the PID controller is in circular mode
+    float maxnumber; // Maximum number for the PID controller, used to limit the output
 } PIDController;
 
 void pid_sp_set(PIDController *pid, float sp);
-void PID_init(PIDController *pid, float Kp, float Ki, float Kd,float fd, float fp, float max_output,float ki_start_err,float deadband);
+void PID_init(PIDController *pid, float Kp, float Ki, float Kd,float fd, float fp, float max_output,float ki_start_err,float deadband,char flag_circle,float maxnumber);
 float PID_compute(PIDController *pid, float *fd);
 #endif

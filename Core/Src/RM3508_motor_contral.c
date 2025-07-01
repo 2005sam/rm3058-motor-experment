@@ -34,8 +34,8 @@ void receive_date(float date,char flag)
 void RM3508_PID_Motor_Init(void)
 {
     // Initialize the PID controller with specified gains and setpoint
-    PID_init(&pidcontraller, speed_kp, speed_ki, speed_kd,1.0f, 1.0f, 16384.0f,0.0f,0.0f); // Set max_output to 100.0f as an example
-    PID_init(&angle_pid_contraller, angle_kp, angle_ki, angle_kd,0.0f, 0.0f, 16384.0f,1.0,10.0); // Set max_output to 100.0f as an example
+    PID_init(&pidcontraller, speed_kp, speed_ki, speed_kd,1.0f, 1.0f, 16384.0f,0.0f,0.0f,0,0); // Set max_output to 100.0f as an example
+    PID_init(&angle_pid_contraller, angle_kp, angle_ki, angle_kd,0.0f, 0.0f, 16384.0f,1.0,10.0,1.0,1.0f); // Set max_output to 100.0f as an example
     pre_motor_speed = 0; // Initialize previous motor speed
 }
 
