@@ -82,7 +82,9 @@ extern void PID_pre_process(PIDController *pid,struct PID_local_information *loc
     
     // Calculate the error between the setpoint and feedback value
     local_info->err = pid->sp- local_info->fd;
+    
     //if in the circular mode, adjust the error to the closest pass
+    /*
     if(pid->flag_circle==1&&(2*local_info->err > pid->maxnumber||2*local_info->err < -pid->maxnumber)){
         if(local_info->err > 0){
             local_info->err -= pid->maxnumber; // Adjust error for circular mode
@@ -90,8 +92,9 @@ extern void PID_pre_process(PIDController *pid,struct PID_local_information *loc
             local_info->err += pid->maxnumber; // Adjust error for circular mode
         }
     }
+    */
     // Check if the error is within the deadband range
-    if(local_info->err > pid->deadband || local_info->err < -pid->deadband) {
+    if((local_info->err < pid->deadband) && (local_info->err > -pid->deadband)) {
         local_info->err = 0; 
     }
     
@@ -105,7 +108,7 @@ extern float PID_compute_co(PIDController *pid, struct PID_local_information *lo
 {
     //compute the integral and derivative errors
     float d_err = (local_info->err - pid->pre_err) / local_info->dt;
-    float integral_err = pid->pre_err_integral + (local_info->err+pid->pre_err) * local_info->dt/2.0f; 
+    float integral_err = pid->pre_err_integral + local_info->ki_flag*(local_info->err+pid->pre_err) * local_info->dt/2.0f; 
     local_info->err_integral = integral_err;
 
     //compute the cop, coi, and cod values

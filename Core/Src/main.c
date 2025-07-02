@@ -55,7 +55,7 @@ uint32_t tx_mailbox;
 */
 uint16_t torque=0;
 uint8_t rx_data[5];
-uint16_t speed = 10; 
+uint16_t speed = 100; 
 char usart_send[100]="66";
 /*
 CAN_RxHeaderTypeDef rx_header_motor[4]={0};
@@ -172,6 +172,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint16_t count=0;
+  float angle=0.0f;
   while (1)
   {
     /*
@@ -199,10 +201,22 @@ int main(void)
 	  }
     */
    // Example speed value
+   /*
+  if(count==10)
+  {
+    count=0;
+    angle+=0.1f; // Increment angle by 0.1 radians
+    if(angle>1.0f)
+    {
+      angle=0.0f; // Reset angle if it exceeds 1.0 radians
+    }
+  }
+  */
+    count++;
    HAL_UART_Transmit(&huart1,(uint8_t*)usart_send,strlen(usart_send),HAL_MAX_DELAY);
    //RM3508_Motor_SetSpeed(&speed); // Set the speed for the motor
    RM3508_Motor_SetAngle(0.25);
-   HAL_Delay(100); // Delay to allow the motor to adjust speed
+   //HAL_Delay(10); // Delay to allow the motor to adjust speed
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
