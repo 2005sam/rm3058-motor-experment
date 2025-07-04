@@ -9,6 +9,11 @@ struct PID_local_information{
     float err_integral;
     float fd;
 };
+float PID_back=10;
+float PID_back2=10;
+float PID_back3=10;
+float PID_back4=10;
+float PID_back5=10;
 
 extern void PID_pre_process(PIDController *pid,struct PID_local_information *local_info);
 extern float PID_compute_co(PIDController *pid, struct PID_local_information *local_info);
@@ -54,16 +59,17 @@ void pid_sp_set(PIDController *pid, float sp)
         .err_integral = 0.0f, // Initialize integral of error to 0
         .fd=*feedback //Initialize feedback to feedback
     };
-    
+		PID_back2=local_info.fd;
     //pre-process the PID controller
     PID_pre_process(pid, &local_info);
-    
+    PID_back=local_info.err;
+
     //compute co in PID
     float co= PID_compute_co(pid, &local_info);
     
     //compute feedforward term
     float cof= fedforward_compute(pid, &local_info);
-    
+    cof=0;
     // Calculate the total control output including feedforward
     float result = co+cof;
     //update the previous values and check the limits
@@ -84,7 +90,7 @@ extern void PID_pre_process(PIDController *pid,struct PID_local_information *loc
     local_info->err = pid->sp- local_info->fd;
     
     //if in the circular mode, adjust the error to the closest pass
-    /*
+    
     if(pid->flag_circle==1&&(2*local_info->err > pid->maxnumber||2*local_info->err < -pid->maxnumber)){
         if(local_info->err > 0){
             local_info->err -= pid->maxnumber; // Adjust error for circular mode
@@ -92,7 +98,7 @@ extern void PID_pre_process(PIDController *pid,struct PID_local_information *loc
             local_info->err += pid->maxnumber; // Adjust error for circular mode
         }
     }
-    */
+    
     // Check if the error is within the deadband range
     if((local_info->err < pid->deadband) && (local_info->err > -pid->deadband)) {
         local_info->err = 0; 
@@ -113,9 +119,11 @@ extern float PID_compute_co(PIDController *pid, struct PID_local_information *lo
 
     //compute the cop, coi, and cod values
     // cop: proportional term, coi: integral term, cod: derivative term 
-    float cop=pid->Kp*(local_info->err);
+    PID_back4=local_info->err;
+		float cop=pid->Kp*(local_info->err);
     float coi=pid->Ki*integral_err;
     float cod=pid->Kd* d_err;
+		PID_back5=cop;
     float co= cop + coi + cod;
     return co;
 }
