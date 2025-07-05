@@ -54,9 +54,10 @@ uint8_t tx_data[8] = {0};
 uint32_t tx_mailbox; 
 */
 uint16_t torque=0;
-uint8_t rx_data[5];
-uint16_t speed = 1000; 
-char usart_send[100];
+uint8_t rx_data;
+uint16_t speed = 100; 
+float angle=0.0f;
+char usart_send[100]="66";
 /*
 CAN_RxHeaderTypeDef rx_header_motor[4]={0};
 uint8_t rx_date[8];
@@ -101,7 +102,8 @@ void motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   // Process the received data
-  if (huart->Instance == USART2) {
+  if (huart->Instance == USART1) {
+    /*
     float rev_date=rx_data[0]<<24 | rx_data[1]<<16 | rx_data[2]<<8 | rx_data[3];
     char flag=rx_data[4];
     if (flag==0xA4) {
@@ -109,10 +111,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
       speed = (uint16_t)rev_date; // Convert received float to uint16_t
     }else{
     receive_date(rev_date, flag); // Call the function to process the received data
+   */ 
+    angle= (float)(rx_data) / 100.0f; // Convert received byte to angle
     }
-    HAL_UART_Receive_IT(&huart2, &rx_data[5],5);
-  }
+  HAL_UART_Receive_IT(&huart1, &rx_data,1);
 }
+
 /* USER CODE END 0 */
 
 /**
@@ -166,12 +170,14 @@ int main(void)
   //HAL_CAN_ConfigFilter(&hcan1, &sFilterConfig);
   //启动中断
   //HAL_CAN_ActivateNotification(&hcan1,CAN_IT_RX_FIFO0_MSG_PENDING);
-  HAL_UART_Receive_IT(&huart2,&rx_data[5], 5); // Start receiving data via UART
+  HAL_UART_Receive_IT(&huart1,&rx_data, 1); // Start receiving data via UART
   RM3508_PID_Motor_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint16_t count=0;
+  
   while (1)
   {
     /*
@@ -199,9 +205,31 @@ int main(void)
 	  }
     */
    // Example speed value
-   HAL_UART_Transmit(&huart2,(uint8_t*)usart_send,strlen(usart_send),100);
-   RM3508_Motor_SetSpeed(&speed); // Set the speed for the motor
-   HAL_Delay(100); // Delay to allow the motor to adjust speed
+   /*
+  if(count==10)
+  {
+    count=0;
+    angle+=0.1f; // Increment angle by 0.1 radians
+    if(angle>1.0f)
+    {
+      angle=0.0f; // Reset angle if it exceeds 1.0 radians
+    }
+  }
+  */
+	if(count==5000)
+	{
+		count=0;
+		angle+=0.25;
+		if(angle>=1)
+		{
+			angle-=1;
+		}
+	}
+    count++;
+   HAL_UART_Transmit(&huart1,(uint8_t*)usart_send,strlen(usart_send),HAL_MAX_DELAY);
+   //RM3508_Motor_SetSpeed(&speed); // Set the speed for the motor
+   RM3508_Motor_SetAngle(angle);
+   HAL_Delay(1); // Delay to allow the motor to adjust speed
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

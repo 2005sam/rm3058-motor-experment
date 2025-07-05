@@ -2,18 +2,23 @@
 //#define speed_kp 1
 //#define speed_ki 1 
 //#define speed_kd 1
-#define angle_kp 100.0f // Proportional gain for angle control
-#define angle_ki 0.0f // Integral gain for angle control
-#define angle_kd 0.0f // Derivative gain for angle control
+//#define angle_kp 0.002f // Proportional gain for angle control
+//#define angle_ki 0.0005f // Integral gain for angle control
+//#define angle_kd 0.0f // Derivative gain for angle control
 
 PIDController pidcontraller;
 PIDController angle_pid_contraller;
-uint16_t pre_motor_speed = 0; // Previous motor speed, used to avoid oscillation
+int16_t pre_motor_speed = 0; // Previous motor speed, used to avoid oscillation
 //warring:this function is only used to regulating PID,plase delete it in the final version
 /***********************************************************************************************/
+float PID_speed_back=0;
 float speed_kp = 100.0f; // Proportional gain
-float speed_ki = 0.0f; // Integral gain
+float speed_ki = 1.0f; // Integral gain
 float speed_kd = 0.0f; // Derivative gain
+float angle_kp = 2000.0f; // Proportional gain for angle control
+float angle_ki = 0.5f; // Integral gain for angle control
+float angle_kd = 0.0f; // Derivative gain for angle control
+
 void receive_date(float date,char flag)
 {
     if(flag == 0xA1)
@@ -30,43 +35,34 @@ void receive_date(float date,char flag)
     }
 
 }
-/***********************************************************************************************/
+float temp=10;
+
+/************************************************************************************************/
 void RM3508_PID_Motor_Init(void)
 {
     // Initialize the PID controller with specified gains and setpoint
-    PID_init(&pidcontraller, speed_kp, speed_ki, speed_kd, 0.0f, 16384.0f); // Set max_output to 100.0f as an example
-    PID_init(&angle_pid_contraller, angle_kp, angle_ki, angle_kd, 0.0f, 16384.0f); // Set max_output to 100.0f as an example
+    PID_init(&pidcontraller, speed_kp,speed_ki,speed_kd,0.0f, 0.0f, 1000.0f,1.0f,0.0f,0,0); // Set max_output to 100.0f as an example
+    PID_init(&angle_pid_contraller, angle_kp, angle_ki, angle_kd,0.0f, 0.0f, 10000.0f,0.3,0.01,1,1.0f); // Set max_output to 100.0f as an example
     pre_motor_speed = 0; // Initialize previous motor speed
 }
 
-void RM3508_Motor_SetSpeed(uint16_t const *speed) 
+void RM3508_Motor_SetSpeed(int16_t const *speed) 
 {
-    float Kp = speed_kp;
-    float Ki = speed_ki;
-    float Kd = speed_kd;
-    float sp = *speed;
+		temp=*speed;
+    float sp = (float)*speed;
     float co;
     float fb = 0;
-    if(pre_motor_speed != *speed) // Check if the speed has changed
-    {
-        pre_motor_speed = *speed; // Update the previous speed
-        pid_sp_set(&pidcontraller, (float)sp); // Set the desired value (setpoint) for the PID controller
-    }
 
-    fb=(float)motor_rm3508_rx_massage().rpm; // Get the feedback value from the motor
-    co = PID_compute(&pidcontraller, &fb); // Compute the control output using the PID controller
-    if(co>pidcontraller.max_output)
-    {
-        co = pidcontraller.max_output; // Limit the output to the maximum value
-    }
-    else if(co<-pidcontraller.max_output)
-    {
-        co = -pidcontraller.max_output; // Limit the output to the minimum value
-    }
-    moter_rm3508_tx_massage((uint16_t)co, 0, 0, 0); // Send the control output to the motor
+    //update setspeed if speed changed
+        pid_sp_set(&pidcontraller, (float)sp);
 
+
+    //comput co and tx to moter
+    fb=(float)motor_rm3508_get_rx_date(0).rpm; 
+    co = PID_compute(&pidcontraller, &fb); 
+    moter_rm3508_tx_massage((int16_t)co, 0, 0, 0);
+		PID_speed_back=co;
 }
-
 
 // used to set control the angle of the motor
 //return the speed should be set to the motor
@@ -76,20 +72,13 @@ float RM3508_Motor_SetAngle(float angle)
     float Ki = angle_ki;
     float Kd = angle_kd;
     float sp = angle;
-    float co;
+    int16_t co;
     float fb = 0;
 
     pid_sp_set(&angle_pid_contraller, sp); // Set the desired value (setpoint) for the PID controller
-    fb = motor_rm3508_rx_massage().angle; // Get the feedback value from the motor
-    co = PID_compute(&angle_pid_contraller, &fb); // Compute the control output using the PID controller
-    if(co > angle_pid_contraller.max_output)
-    {
-        co = angle_pid_contraller.max_output; // Limit the output to the maximum value
-    }
-    else if(co < -angle_pid_contraller.max_output)
-    {
-        co = -angle_pid_contraller.max_output; // Limit the output to the minimum value
-    }
-    return co; // Return the control output
-    RM3508_Motor_SetSpeed((uint16_t *)&co); // Set the speed based on the control output
+    fb = motor_rm3508_get_rx_date(0).angle; // Get the feedback value from the motor
+    co = (int16_t)PID_compute(&angle_pid_contraller, &fb); // Compute the control output using the PID controller
+		temp=fb;
+    RM3508_Motor_SetSpeed(&co); // Set the speed based on the control output
+    return co; // Return the control output (speed) to be set to the motor
 }

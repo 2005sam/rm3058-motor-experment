@@ -8,10 +8,12 @@
 	tx_data[2*i-2] = motor##i>>8;\
 	tx_data[2*i-1] = motor##i;\
 }while(0)
+
 #define motor_active_it(i) CAN_IT_RX_FIFO##i##_MSG_PENDING
+//this define is not working
 #define CAN_Rx_FifoMsg_PendingCallback(i) void CAN_Rx_Fifo##i##_Msg_PendingCallback(CAN_HandleTypeDef *hcan)
 
-
+//define motor RM3508 tx massage can communication protocol
 #define motor_RM3508_tx_header(motor)do{\
 	motor.StdId = 0x200;\
 	motor.ExtId = 0;\
@@ -21,6 +23,8 @@
 	motor.TransmitGlobalTime = DISABLE;\
 }while(0)
 
+//define motor RM3508 each rx header can communication protocol
+// the date is the motor number,0-3,corresponding to motor 1-4
 #define motor_RM3508_each_rx_header(motor,date)do{\
 	motor.StdId = 0x201+date;\
 	motor.ExtId = 0;\
@@ -29,6 +33,7 @@
 	motor.IDE=CAN_ID_STD;\
 }while(0)
 
+//define can filter configuration for RM3508 motor
 #define motor_RM3508_sFilterConfig(sFilterConfig)do{\
 	 sFilterConfig.FilterActivation = ENABLE;\
 	 sFilterConfig.FilterBank = 0;\
@@ -50,6 +55,8 @@ static CAN_HandleTypeDef hcan;
 static uint32_t Rxfifo;
 static char fifo_number;
 struct rx_date_motor_rm3508_struct motor_rx_date;
+
+
 
 //CAN1 init function
 void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number_input)
@@ -76,7 +83,12 @@ void motor_RM3508_Init(CAN_HandleTypeDef * hcan1,char fifo_number_input)
 	HAL_CAN_ConfigFilter(&hcan,&sFilterConfig);
 	HAL_CAN_Start(&hcan);
 
+
 }
+
+
+
+// Function to prepare the data for transmission
 void moter_rm3508_tx_massage(int16_t motor1,int16_t motor2,int16_t motor3,int16_t motor4)
 {
 	uint32_t tx_mailbox;
@@ -89,45 +101,56 @@ void moter_rm3508_tx_massage(int16_t motor1,int16_t motor2,int16_t motor3,int16_
 	HAL_CAN_AddTxMessage(&hcan,&tx_header_motor,tx_data,&tx_mailbox);
 }
 
-struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(void)
+
+
+// Function to process the received data from the moto,and return the processed data
+struct rx_date_motor_rm3508_struct motor_rm3508_rx_massage(char *motor_number)
 {
 	uint8_t rx_date[8];
-	if(HAL_CAN_GetRxMessage(&hcan,Rxfifo,&rx_header_motor[0],rx_date)==HAL_OK)
+	for(int i=0;i<4;i++)
 	{
-
-		motor_rx_date.angle = (rx_date[0]<<8 | rx_date[1])/8191.0f;
-		motor_rx_date.rpm = (rx_date[2]<<8 | rx_date[3]);
-		motor_rx_date.current = (rx_date[4]<<8 | rx_date[5]);
-		motor_rx_date.temperture = rx_date[6];
-		return motor_rx_date;
+		if(HAL_CAN_GetRxMessage(&hcan,Rxfifo,&rx_header_motor[i],rx_date)==HAL_OK)
+		{
+			*motor_number=i;
+			motor_rx_date.angle = (rx_date[0]<<8 | rx_date[1])/8191.0f;
+			motor_rx_date.rpm = (rx_date[2]<<8 | rx_date[3]);
+			motor_rx_date.current = (rx_date[4]<<8 | rx_date[5]);
+			motor_rx_date.temperture = rx_date[6];
+			return motor_rx_date;
+		}
 	}
-}	
+}
 
-struct rx_date_motor_rm3508_struct motor_rx_date_it;
-CAN_Rx_FifoMsg_PendingCallback(0)
+
+
+// Callback function for CAN message pending in FIFO 0/1
+struct rx_date_motor_rm3508_struct motor_rx_date_it[4];
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	if(fifo_number==1)
 		return;
-	
-	motor_rx_date_it = motor_rm3508_rx_massage();
-	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
+
+	char motor_number=0;
+	struct rx_date_motor_rm3508_struct  temp= motor_rm3508_rx_massage(&motor_number);
+	motor_rx_date_it[motor_number] = temp;
+	motor_rm3508_MSgPendingCallback(motor_rx_date_it[motor_number],hcan);
+
 }
 
-CAN_Rx_FifoMsg_PendingCallback(1)
+void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
 	if(fifo_number==0)
 		return;
-	
-	motor_rx_date_it = motor_rm3508_rx_massage();
-	motor_rm3508_MSgPendingCallback(motor_rx_date_it,hcan);
+
+	char motor_number=0;
+	motor_rx_date_it[motor_number] = motor_rm3508_rx_massage(&motor_number);
+	motor_rm3508_MSgPendingCallback(motor_rx_date_it[motor_number],hcan);
 }
-struct rx_date_motor_rm3508_struct motor_rm3508_get_rx_date(void)
+
+
+struct rx_date_motor_rm3508_struct motor_rm3508_get_rx_date(char motor_number)
 {
-	return motor_rx_date_it;
+	return motor_rx_date_it[motor_number];
 }
 
 
-
-void __attribute__((weak)) motor_rm3508_MSgPendingCallback(struct rx_date_motor_rm3508_struct rx_date,CAN_HandleTypeDef *hcan)
-{
-}
